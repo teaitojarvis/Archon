@@ -15,8 +15,6 @@ services:
         BUILDKIT_INLINE_CACHE: 1
         ARCHON_SERVER_PORT: ${ARCHON_SERVER_PORT:-8181}
     container_name: archon-server
-    ports:
-      - "${ARCHON_SERVER_PORT:-8181}:${ARCHON_SERVER_PORT:-8181}"
     environment:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
@@ -30,8 +28,7 @@ services:
       - AGENT_WORK_ORDERS_PORT=${AGENT_WORK_ORDERS_PORT:-8053}
       - AGENTS_ENABLED=${AGENTS_ENABLED:-false}
       - ARCHON_HOST=${HOST:-localhost}
-    networks:
-      - app-network
+    network_mode: host
     volumes:
       # SECURITY: Docker socket mounting removed (CVE-2025-9074 - CVSS 9.3)
       # MCP status now monitored via HTTP health checks (secure, portable)
@@ -78,24 +75,22 @@ services:
         BUILDKIT_INLINE_CACHE: 1
         ARCHON_MCP_PORT: ${ARCHON_MCP_PORT:-8051}
     container_name: archon-mcp
-    ports:
-      - "${ARCHON_MCP_PORT:-8051}:${ARCHON_MCP_PORT:-8051}"
     environment:
       - SUPABASE_URL=${SUPABASE_URL}
       - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
       - LOGFIRE_TOKEN=${LOGFIRE_TOKEN:-}
-      - SERVICE_DISCOVERY_MODE=docker_compose
+      - SERVICE_DISCOVERY_MODE=host
       - TRANSPORT=sse
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       # MCP needs to know where to find other services
-      - API_SERVICE_URL=http://archon-server:${ARCHON_SERVER_PORT:-8181}
+      # In this Jarvis setup, the Archon backend runs natively on localhost:8283
+      - API_SERVICE_URL=http://127.0.0.1:${ARCHON_SERVER_PORT:-8283}
       - AGENTS_ENABLED=${AGENTS_ENABLED:-false}
       - AGENTS_SERVICE_URL=${AGENTS_SERVICE_URL:-http://archon-agents:${ARCHON_AGENTS_PORT:-8052}}
       - ARCHON_MCP_PORT=${ARCHON_MCP_PORT:-8051}
-      - ARCHON_SERVER_PORT=${ARCHON_SERVER_PORT:-8181}
+      - ARCHON_SERVER_PORT=${ARCHON_SERVER_PORT:-8283}
       - ARCHON_AGENTS_PORT=${ARCHON_AGENTS_PORT:-8052}
-    networks:
-      - app-network
+    network_mode: host
     depends_on:
       archon-server:
         condition: service_healthy
